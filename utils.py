@@ -2,7 +2,7 @@ import unidecode
 import re
 from nltk import ngrams
 import numpy as np
-from config import alphabet, NGRAM
+from config import alphabet
 from collections import Counter
 
 def remove_accent(text):
@@ -95,9 +95,15 @@ def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
     return avg_accuracy
 
 
-def batch_to_device(text, tgt_input, tgt_output, device):
+def batch_to_device(text, tgt_input, tgt_output, tgt_padding_mask, device):
     text = text.to(device, non_blocking=True)
     tgt_input = tgt_input.to(device, non_blocking=True)
     tgt_output = tgt_output.to(device, non_blocking=True)
+    tgt_padding_mask = tgt_padding_mask.to(device, non_blocking=True)
     
-    return text, tgt_input, tgt_output
+    return text, tgt_input, tgt_output, tgt_padding_mask
+
+def get_bucket(w):
+    bucket_size = (w // 5) * 5
+
+    return bucket_size
