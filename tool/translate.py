@@ -1,5 +1,5 @@
 import torch
-import numpy as np 
+import numpy as np
 from torch.nn.functional import log_softmax, softmax
 
 def translate(src_text, model, device, max_seq_length=256, sos_token=1, eos_token=2):
@@ -29,4 +29,4 @@ def translate(src_text, model, device, max_seq_length=256, sos_token=1, eos_toke
 
         translated_sentence = np.asarray(translated_sentence).T
 
-    return translated_sentence            
+    return translated_sentence

@@ -21,5 +21,5 @@ class Encoder(nn.Module):
         embedded = embedded.permute(1, 0, 2)
         outputs, hidden = self.rnn(embedded)
         hidden = torch.tanh(self.fc(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)))
-        
+
         return outputs, hidden

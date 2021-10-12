@@ -51,7 +51,7 @@ class FocalLoss(nn.Module):
         mask = torch.nonzero(target.data == 0, as_tuple=False)
         if mask.dim() > 0:
             target_one_hot.index_fill_(0, mask.squeeze(), 0.0)
-            
+
         # compute the actual focal loss
         weight = torch.pow(1. - input_soft, self.gamma)
         focal = -1 * weight * torch.log(input_soft)

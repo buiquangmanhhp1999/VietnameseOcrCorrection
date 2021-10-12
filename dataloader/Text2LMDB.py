@@ -1,4 +1,4 @@
-from utils import extract_phrases, gen_ngrams
+from tool.utils import extract_phrases, gen_ngrams
 import itertools
 from tqdm import tqdm
 from config import NGRAM
@@ -46,7 +46,7 @@ for p in tqdm(phrases, desc='Creating dataset ...'):
                     writeCache(tgt_env, cache)
                     cache = {}
                 tgt_env = train_env
-            
+
             if val_cnt < val_data:
                 # write data
                 textKey = 'text-%12d' % val_cnt
@@ -55,11 +55,11 @@ for p in tqdm(phrases, desc='Creating dataset ...'):
                 # write data
                 textKey = 'text-%12d' % train_cnt
                 train_cnt += 1
-            
+
             ngram_text = ngram_text.strip()
             ngram_text = ngram_text.rstrip()
             ngram_text = normalize("NFC", ngram_text)
-            
+
             cache[textKey] = ngram_text.encode()
             if len(cache) % 1000 == 0:
                 writeCache(tgt_env, cache)

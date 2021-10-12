@@ -1,11 +1,9 @@
 from torch.utils.data import Dataset
 import unidecode
-from unicodedata import normalize
-import itertools
 from tqdm import tqdm
 from torch.utils.data.sampler import Sampler
 from collections import defaultdict
-from utils import extract_phrases, gen_ngrams, get_bucket
+from tool.utils import get_bucket
 import re
 from config import alphabet, chars_regrex, same_chars
 import torch
@@ -19,7 +17,7 @@ import random
 
 class BasicDataset(Dataset):
     def __init__(self, lmdb_path):
-        # read data 
+        # read data
         self.vocab = Vocab(alphabet)
         self.lmdb_path = lmdb_path
         self.env = lmdb.open(lmdb_path, max_readers=126, readonly=True, lock=False, readahead=False, meminit=False)
@@ -37,11 +35,11 @@ class BasicDataset(Dataset):
                 if text is None or len(text) > 200:
                     error += 1
                     continue
-                
+
                 w = len(text)
                 bucket_size = get_bucket(w)
                 self.cluster_indices[int(bucket_size)].append(i)
-            
+
             print('Remove {} images'.format(error))
             data = json.dumps(self.cluster_indices)
             f = open(os.path.basename(self.lmdb_path) + '.json', "w")
@@ -50,46 +48,46 @@ class BasicDataset(Dataset):
         else:
             # Opening JSON file
             f = open(os.path.basename(self.lmdb_path) + '.json',)
-            
-            # returns JSON object as 
+
+            # returns JSON object as
             # a dictionary
             data = json.load(f)
 
             for bucket_size in data:
                 if len(data[str(bucket_size)]) > 0:
                     self.cluster_indices[int(bucket_size)].extend(data[str(bucket_size)])
-    
+
     def read_data(self, idx):
         textKey = 'text-%12d' % idx
         text = self.txn.get(textKey.encode()).decode()
-     
+
         return text
-    
+
     def remove_random_accent(self, text, ratio=0.15):
         words = text.split()
         mask = np.random.random(size=len(words)) < ratio
-        
+
         for i in range(len(words)):
             if mask[i]:
                 words[i] = unidecode.unidecode(words[i])
                 break
 
         return ' '.join(words)
-    
+
     def remove_random_space(self, text):
         words = text.split()
         n_words = len(words)
         start = np.random.randint(low=0, high=n_words, size=1)[0]
-        
+
         if start + 3 < n_words:
             end = np.random.randint(low=start, high=start + 3, size=1)[0]
         else:
             end = np.random.randint(low=start, high=n_words, size=1)[0]
 
         out = ' '.join(words[:start])  + ' ' + ''.join(words[start:end + 1]) + ' ' + ' '.join(words[end + 1:])
-        
+
         return out.strip()
-    
+
     def _char_regrex(self, text):
         match_chars = re.findall(chars_regrex, text)
 
@@ -102,12 +100,12 @@ class BasicDataset(Dataset):
         text = text.replace(replace_char, insert_char, 1)
 
         return text
-    
+
     def change(self, text):
         match_chars = self._char_regrex(text)
         if len(match_chars) == 0:
             return text
-        
+
         text = self._random_replace(text, match_chars)
 
         return text
@@ -115,14 +113,14 @@ class BasicDataset(Dataset):
     def replace_accent_chars(self, text, ratio=0.15):
         words = text.split()
         mask = np.random.random(size=len(words)) < ratio
-        
+
         for i in range(len(words)):
             if mask[i]:
                 words[i] = self.change(words[i])
-                break          
+                break
 
-        return ' '.join(words)  
-    
+        return ' '.join(words)
+
     def upper(self, text, ratio=0.1):
         words = text.split()
         mask_words = np.random.random(size=len(words)) < ratio
@@ -136,21 +134,21 @@ class BasicDataset(Dataset):
                     if mask_chars[j]:
                         words[i] = words[i].replace(words[i][j], words[i][j].upper())
                         cnt_char += 1
-                        
+
                     if cnt_char >= 3:
                         break
-                        
+
                 cnt_word += 1
 
             if cnt_word >= 1:
                 break
 
         return  ' '.join(words)
-    
+
     def __getitem__(self, idx):
         ori = self.read_data(idx)
         gts = ori
-        
+
         if len(ori.split()) > 3:
             rd_aug_idx = np.random.randint(low=0, high=9, size=1)[0]
             if rd_aug_idx < 3:
@@ -163,10 +161,10 @@ class BasicDataset(Dataset):
                 text = self.remove_random_space(ori)
         else:
             text = self.remove_random_space(ori)
-        
+
         input_text = self.vocab.encode(text)
         gts = self.vocab.encode(gts)
-        
+
         return {'text': input_text, 'label': gts}
 
     def __len__(self):
@@ -206,20 +204,19 @@ class ClusterRandomSampler(Sampler):
 
     def __len__(self):
         return len(self.data_source)
-    
+
 class Collator(object):
     def __call__(self, batch):
         text_data = []
         tgt_input = []
         target_weights = []
 
-        
         MAXLEN = max(len(sample['label']) for sample in batch)
         for sample in batch:
             text, label = sample['text'], sample['label']
             label_len = len(label)
             text_len = len(text)
-            
+
             src = np.concatenate((text, np.zeros(MAXLEN - text_len, dtype=np.int32)))
             tgt = np.concatenate((label, np.zeros(MAXLEN - label_len, dtype=np.int32)))
 
@@ -230,7 +227,7 @@ class Collator(object):
             target_weights.append(np.concatenate((
                 np.ones(one_mask_len, dtype=np.float32),
                 np.zeros(MAXLEN - one_mask_len, dtype=np.float32))))
-        
+
         tgt_input = np.array(tgt_input, dtype=np.int64).T
         tgt_output = np.roll(tgt_input, -1, 0).T
         tgt_output[:, -1] = 0

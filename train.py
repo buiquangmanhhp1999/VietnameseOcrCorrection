@@ -6,11 +6,10 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
 from config import alphabet
 from optim.loss import LabelSmoothingLoss
-from optim.focal_loss import FocalLoss
 from model.seq2seq import Seq2Seq
 from model.transformer import LanguageTransformer
 from torch.utils.data import DataLoader
-from utils import batch_to_device, compute_accuracy
+from tool.utils import batch_to_device, compute_accuracy
 from tool.translate import translate
 import time
 from tool.logger import Logger

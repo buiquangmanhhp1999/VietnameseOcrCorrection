@@ -53,6 +53,6 @@ class Seq2Seq(nn.Module):
             input = trg[t]
             output, hidden, _ = self.decoder(input, hidden, encoder_outputs)
             outputs[t] = output
-            
+
         outputs = outputs.transpose(0, 1).contiguous()
         return outputs

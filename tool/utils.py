@@ -2,8 +2,7 @@ import unidecode
 import re
 from nltk import ngrams
 import numpy as np
-from config import alphabet
-from collections import Counter
+
 
 def remove_accent(text):
     return unidecode.unidecode(text)
@@ -66,7 +65,7 @@ def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
                 avg_accuracy = 1
             else:
                 avg_accuracy = 0
-                
+
     elif mode == 'word':
         accuracy = []
 
@@ -80,7 +79,7 @@ def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
                 if i > len(pred_word_list) - 1:
                     accuracy.append(0)
                     continue
-                    
+
                 pred_w = pred_word_list[i]
 
                 if pred_w == gt_w:
@@ -100,7 +99,7 @@ def batch_to_device(text, tgt_input, tgt_output, tgt_padding_mask, device):
     tgt_input = tgt_input.to(device, non_blocking=True)
     tgt_output = tgt_output.to(device, non_blocking=True)
     tgt_padding_mask = tgt_padding_mask.to(device, non_blocking=True)
-    
+
     return text, tgt_input, tgt_output, tgt_padding_mask
 
 def get_bucket(w):

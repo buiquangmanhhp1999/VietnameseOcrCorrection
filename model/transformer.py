@@ -1,5 +1,3 @@
-from einops import rearrange
-from torchvision import models
 import math
 import torch
 from torch import nn
@@ -37,18 +35,16 @@ class LanguageTransformer(nn.Module):
 
         """
         tgt_mask = self.gen_nopeek_mask(tgt.shape[0]).to(src.device)
-        
+
         src = self.embed_src(src)
         src = src.permute(1, 0, 2)
 
         src = self.pos_enc(src * math.sqrt(self.d_model))
-        #        src = self.learned_pos_enc(src*math.sqrt(self.d_model))
         tgt = self.pos_enc(self.embed_tgt(tgt) * math.sqrt(self.d_model))
 
         output = self.transformer(src, tgt, tgt_mask=tgt_mask, src_key_padding_mask=src_key_padding_mask,
                                   tgt_key_padding_mask=tgt_key_padding_mask,
                                   memory_key_padding_mask=memory_key_padding_mask)
-        #        output = rearrange(output, 't n e -> n t e')
         output = output.transpose(0, 1)
         return self.fc(output)
 
@@ -60,7 +56,7 @@ class LanguageTransformer(nn.Module):
         return mask
 
     def forward_encoder(self, src):
-        # embedding 
+        # embedding
         src = self.embed_src(src)
         src = src.permute(1, 0, 2)
         src = self.pos_enc(src * math.sqrt(self.d_model))
@@ -100,8 +96,6 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-#         print('pe: ', self.pe.size())
-#         print('x: ', x.size())
         x = x + self.pe[:x.size(0), :]
 
         return self.dropout(x)
